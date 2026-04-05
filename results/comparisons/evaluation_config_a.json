@@ -1,0 +1,19 @@
+{
+  "config_name": "config_a",
+  "sample_count": 2,
+  "k": 2,
+  "metrics": {
+    "retrieval": {
+      "precision_at_k": 0.75,
+      "hit_rate_at_k": 1.0,
+      "mean_reciprocal_rank": 1.0
+    },
+    "generation": {
+      "average_relevance": 1.0,
+      "average_grounding_score": 0.9285714285714286,
+      "hallucination_rate": 0.0714285714285714
+    },
+    "overall_score": 0.9404761904761905
+  },
+  "created_at_utc": "2026-04-04T20:02:24.360822+00:00"
+}
