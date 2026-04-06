@@ -46,8 +46,9 @@ class RAGPipelineConfig:
     use_reranker: bool = False
     reranker_model: str = "BAAI/bge-reranker-base"
     llm_provider: str = "llama"
-    llm_model_name: str = "llama2"
+    llm_model_name: str = "llama3.2:3b"
     llm_api_url: str = "http://localhost:11434/api/generate"
+    llm_timeout_seconds: int = 180
     include_sources: bool = True
     system_role: str = "domain expert assistant"
 
@@ -146,14 +147,27 @@ class RAGPipeline:
         }
 
 
-def build_llm(provider: str = "llama", model_name: str | None = None, api_url: str | None = None) -> Any:
+def build_llm(
+    provider: str = "llama",
+    model_name: str | None = None,
+    api_url: str | None = None,
+    timeout_seconds: int = 180,
+) -> Any:
     """Factory for LLaMA and Gemma wrappers."""
 
     provider = provider.lower().strip()
     if provider == "llama":
-        return LlamaModel(model_name=model_name or "llama2", api_url=api_url or "http://localhost:11434/api/generate")
+        return LlamaModel(
+            model_name=model_name or "llama3.2:3b",
+            api_url=api_url or "http://localhost:11434/api/generate",
+            request_timeout_seconds=timeout_seconds,
+        )
     if provider == "gemma":
-        return GemmaModel(model_name=model_name or "gemma:7b", api_url=api_url or "http://localhost:11434/api/generate")
+        return GemmaModel(
+            model_name=model_name or "qwen2.5:3b",
+            api_url=api_url or "http://localhost:11434/api/generate",
+            request_timeout_seconds=timeout_seconds,
+        )
     raise ValueError(f"Unsupported LLM provider: {provider}")
 
 
@@ -224,6 +238,7 @@ def run_rag_pipeline(
         provider=config.llm_provider,
         model_name=config.llm_model_name,
         api_url=config.llm_api_url,
+        timeout_seconds=config.llm_timeout_seconds,
     )
     pipeline = RAGPipeline(retriever=retriever, llm=model, config=config)
     return pipeline.generate(query, top_k=top_k, max_tokens=max_tokens, temperature=temperature)

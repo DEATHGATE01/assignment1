@@ -31,7 +31,22 @@ class SemanticSearch:
         Returns:
             Ranked list of relevant chunks.
         """
-        results = self.retriever.retrieve(query, k=k * 2)
+        normalized_query = query.lower().strip()
+        expanded_query = query
+        if any(
+            phrase in normalized_query
+            for phrase in (
+                "what is the paper about",
+                "paper about",
+                "summary of the paper",
+                "main idea of the paper",
+            )
+        ):
+            expanded_query = (
+                f"{query}. Focus on abstract, objective, method, and key findings."
+            )
+
+        results = self.retriever.retrieve(expanded_query, k=k * 2)
 
         # Filter by similarity threshold if applicable
         if min_similarity > 0.0:

@@ -41,17 +41,18 @@ class PromptBuilder:
 
         prompt = f"""You are a {system_role}.
 
-Answer the question using ONLY the provided context below.
-If the answer is not found in the context, explicitly state "The answer is not available in the provided context."
-Do not make assumptions or provide information from your training data.
+    Answer the question using ONLY the provided context below.
+    If the context is partial but relevant, provide the best possible answer and clearly mark uncertainty.
+    Only say "The answer is not available in the provided context." when the context has no relevant information at all.
+    Do not use outside knowledge.
 
-Context:
-{context}
+    Context:
+    {context}
 
-Question:
-{query}
+    Question:
+    {query}
 
-Answer:"""
+    Answer:"""
         return prompt
 
     @staticmethod

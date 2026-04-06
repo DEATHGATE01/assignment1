@@ -41,6 +41,7 @@ class DemoSettings:
     llm_provider: str
     llm_model_name: str
     llm_api_url: str
+    llm_timeout_seconds: int
     use_reranker: bool
     reranker_model: str
     top_k: int
@@ -143,9 +144,10 @@ def _render_sidebar() -> DemoSettings:
 
         st.markdown("### Generation")
         llm_provider = st.selectbox("LLM provider", ["llama", "gemma"], index=0)
-        default_model_name = "llama2" if llm_provider == "llama" else "gemma:7b"
+        default_model_name = "llama3.2:3b" if llm_provider == "llama" else "qwen2.5:3b"
         llm_model_name = st.text_input("LLM model name", value=default_model_name)
         llm_api_url = st.text_input("LLM API URL", value="http://localhost:11434/api/generate")
+        llm_timeout_seconds = st.slider("LLM timeout (seconds)", min_value=30, max_value=600, value=180, step=15)
 
         st.markdown("### Retrieval")
         use_reranker = st.checkbox("Use reranker", value=False)
@@ -162,6 +164,7 @@ def _render_sidebar() -> DemoSettings:
         llm_provider=llm_provider,
         llm_model_name=llm_model_name,
         llm_api_url=llm_api_url,
+        llm_timeout_seconds=llm_timeout_seconds,
         use_reranker=use_reranker,
         reranker_model=reranker_model,
         top_k=top_k,
@@ -246,20 +249,42 @@ def _run_query(query: str, settings: DemoSettings) -> tuple[str, str, list[dict[
             "none",
         )
 
-    config = RAGPipelineConfig(
-        query_top_k=settings.top_k,
-        use_reranker=settings.use_reranker,
-        reranker_model=settings.reranker_model,
-        llm_provider=settings.llm_provider,
-        llm_model_name=settings.llm_model_name,
-        llm_api_url=settings.llm_api_url,
-        include_sources=True,
-    )
-    llm = build_llm(
-        provider=settings.llm_provider,
-        model_name=settings.llm_model_name,
-        api_url=settings.llm_api_url,
-    )
+    try:
+        config = RAGPipelineConfig(
+            query_top_k=settings.top_k,
+            use_reranker=settings.use_reranker,
+            reranker_model=settings.reranker_model,
+            llm_provider=settings.llm_provider,
+            llm_model_name=settings.llm_model_name,
+            llm_api_url=settings.llm_api_url,
+            llm_timeout_seconds=settings.llm_timeout_seconds,
+            include_sources=True,
+        )
+    except TypeError:
+        # Backward-compatibility with older loaded pipeline module signatures.
+        config = RAGPipelineConfig(
+            query_top_k=settings.top_k,
+            use_reranker=settings.use_reranker,
+            reranker_model=settings.reranker_model,
+            llm_provider=settings.llm_provider,
+            llm_model_name=settings.llm_model_name,
+            llm_api_url=settings.llm_api_url,
+            include_sources=True,
+        )
+
+    try:
+        llm = build_llm(
+            provider=settings.llm_provider,
+            model_name=settings.llm_model_name,
+            api_url=settings.llm_api_url,
+            timeout_seconds=settings.llm_timeout_seconds,
+        )
+    except TypeError:
+        llm = build_llm(
+            provider=settings.llm_provider,
+            model_name=settings.llm_model_name,
+            api_url=settings.llm_api_url,
+        )
     rag_result = run_rag_pipeline(
         query,
         retriever,
